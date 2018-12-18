@@ -14,11 +14,12 @@ PT_veh_dropcrate = compile preprocessFileLineNumbers "\z\addons\dayz_server\addo
 PT_heli_damage = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\heli_damage.sqf";
 
 PT_add_cargoUnits = {
-	private ["_unitGroup","_vehicle","_skin","_skill","_cargoSpots","_i","_cargo","_aicskill","_weapon","_magazine"];
+	private ["_unitGroup","_vehicle","_skin","_skill","_aitype","_cargoSpots","_i","_cargo","_aicskill","_weapon","_magazine"];
 	_unitGroup = _this select 0;
 	_vehicle = _this select 1;
 	_skill = _this select 2;
 	_skin = _this select 3;
+	_aitype = _this select 4;
 	
 	_cargoSpots = ceil((_vehicle emptyPositions "cargo") * PT_cargo_ratio);
 	for "_i" from 0 to (_cargoSpots - 1) do {
@@ -66,6 +67,13 @@ PT_add_cargoUnits = {
 		{
 			(unitBackpack _cargo) addMagazineCargoGlobal [_x, 1];
 		} count ((ai_gear_random call BIS_fnc_selectRandom) select 0);
+		
+		//humanity
+		call {
+			if (_aitype == "hero") exitWith {_cargo setVariable ["Hero",true]; _cargo setVariable ["humanity", ai_remove_humanity];};
+			if (_aitype == "bandit") exitWith {_cargo setVariable ["Bandit",true]; _cargo setVariable ["humanity", ai_add_humanity];};
+			if (_aitype == "special") exitWith {_cargo setVariable ["Special",true]; _cargo setVariable ["humanity", ai_special_humanity];};
+		};
 	
 		//movein
 		_cargo assignAsCargo _vehicle;
@@ -114,7 +122,7 @@ PT_heli_patrol = {
 		_vehicle lock false;
 		
 		//Add units
-		[_unitGroup,_vehicle,_skill,_skin] call PT_add_cargoUnits;
+		[_unitGroup,_vehicle,_skill,_skin,_this select 6] call PT_add_cargoUnits;
 		_unitGroup allowFleeing 0;
 		
 		//EHs - spawn crate and eject crew
@@ -194,7 +202,7 @@ PT_vehicle_patrol = {
 		_unitGroup setVariable ["assignedVehicle",_vehicle];
 		
 		//Add units
-		[_unitGroup,_vehicle,_skill,_skin] call PT_add_cargoUnits;
+		[_unitGroup,_vehicle,_skill,_skin,_this select 7] call PT_add_cargoUnits;
 		_unitGroup allowFleeing 0;
 		
 		//EHs - spawn crate and eject crew
