@@ -1,7 +1,8 @@
-private ["_heli_num","_heliList","_helis","_vehicle_num","_vehicleList","_vehicles","_cityAI","_villageAI","_villageAI_chance","_positions"];
+private ["_BH_ratio","_heli_num","_heliList","_helis","_vehicle_num","_vehicleList","_vehicles","_cityAI","_villageAI","_villageAI_chance","_positions"];
 if (!PT_activate_patrol) exitWith {};
 
 /* config */
+_BH_ratio = ["Bandit","Bandit","Bandit","Hero"];
 
 //chopper patrol in this script
 _heli_num = 3; // number of heli patrol
@@ -71,7 +72,7 @@ diag_log format["[Patrol] Choppers:%1",_helis];
 
 for "_i" from 1 to _heli_num do {
 	private ["_adm"];
-	_adm = ["Bandit","Hero"] call BIS_fnc_selectRandom;
+	_adm = _BH_ratio call BIS_fnc_selectRandom;
 	//spawn
 	[
 		[getMarkerPos "center",0,((getMarkerSize "center") select 1)/2,15,0,1.0,0] call BIS_fnc_findSafePos,
@@ -95,7 +96,7 @@ diag_log format["[Patrol] Vehicles:%1",_vehicles];
 
 for "_i" from 1 to _vehicle_num do {
 	private ["_adm","_dest","_strt","_rad"];
-	_adm = ["Bandit","Hero"] call BIS_fnc_selectRandom;
+	_adm = _BH_ratio call BIS_fnc_selectRandom;
 	_rad = 1000;
 	//spawn
 	[
@@ -117,8 +118,12 @@ if (_cityAI) then {
 	_text=text _x;
 	if (_text != "") then {
 		_pos = locationPosition _x;
+		
+		//safezone check
 		if ({_pos distance (_x select 0) < ((_x select 1) * 10)} foreach DZE_SafeZonePosArray) exitWith {};
-		[_pos,ceil(random 4) + 2,"Medium",[0,["AT","AA"] call BIS_fnc_selectRandom],5,"Random","Bandit","Random",["Bandit","Hero"] call BIS_fnc_selectRandom] spawn PT_spawn_group;
+		
+		//spawn
+		[_pos,ceil(random 4) + 2,"Medium",[0,["AT","AA"] call BIS_fnc_selectRandom],5,"Random","Bandit","Random",_BH_ratio call BIS_fnc_selectRandom] spawn PT_spawn_group;
 		diag_log format["[Patrol] Town Infantry @ %1 %2",_text,_pos];
 	};
 } foreach (nearestLocations [getMarkerPos "center", ["NameCityCapital","NameCity"],(getMarkerSize "center") select 1]);
@@ -130,7 +135,11 @@ if (_villageAI) then {
 	_text=text _x;
 	if (_text != "" && ((random 1) < _villageAI_chance)) then {
 		_pos = locationPosition _x;
+		
+		//safezone check
 		if ({_pos distance (_x select 0) < ((_x select 1) * 10)} foreach DZE_SafeZonePosArray) exitWith {};
+		
+		//spawn
 		[_pos,ceil(random 4),"Easy",0,3,"none","Bandit",1,"Bandit"] spawn PT_spawn_group;
 		diag_log format["[Patrol] Village Infantry @ %1 %2",_text,_pos];
 	};
