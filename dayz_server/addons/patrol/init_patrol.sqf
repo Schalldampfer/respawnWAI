@@ -260,6 +260,11 @@ PT_spawn_group = {
 		_unitGroup = _arry call spawn_group;
 		diag_log format["[Patrol] Spawning %1 %2",name (leader _unitGroup),_pos];
 		
+		//waypoint
+		if((count _pos) < 3) then {
+			[_unitGroup,_pos,_skill] call group_waypoints;
+		};
+		
 		//monitor
 		_time = diag_tickTime;
 		_dot = createMarker ["", [0,0,0]];
