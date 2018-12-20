@@ -1,4 +1,10 @@
 // // // AT YOUR OWN LISK, EDIT BELOW - NO SUPPORT PROVIDED IF YOU EDIT BELOW // // //
+PTconfigloaded = false;
+PT_wait_for_PT = {
+	waitUntil{!isNil "PTconfigloaded"};
+	waitUntil{PTconfigloaded};
+	true
+};
 
 PT_wait_for_WAI = {
 	waitUntil{!isNil "WAIconfigloaded"};
@@ -12,6 +18,27 @@ call compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\conf
 /* functions */
 PT_veh_dropcrate = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\veh_dropcrate.sqf";
 PT_heli_damage = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\heli_damage.sqf";
+
+PT_setVehicle = {
+	private ["_unitGroup","_vehicle"];
+	_unitGroup = _this;
+	_vehicle = vehicle (leader _unitGroup); //get vehicle object
+	_vehicle lock false;
+	_unitGroup setVariable ["assignedVehicle",_vehicle];
+	if (PT_log) then {
+		diag_log format["[Patrol] Vehicle %1 is related to %2", _unitGroup getVariable ['assignedVehicle',objNull], name (leader _unitGroup)];
+	};
+	_vehicle
+};
+
+PT_cnvARRY = {
+	private ["_test"];
+	_test = _this;
+	if(typeName (_test) == "ARRAY") then {
+		_test = _test call BIS_fnc_selectRandom;
+	};
+	_test
+};
 
 PT_add_cargoUnits = {
 	private ["_unitGroup","_vehicle","_skin","_skill","_aitype","_cargoSpots","_i","_cargo","_aicskill","_weapon","_magazine"];
@@ -28,7 +55,7 @@ PT_add_cargoUnits = {
 		if(_skin == "hero") 	then { _skin = ai_hero_skin call BIS_fnc_selectRandom; };
 		if(_skin == "bandit") 	then { _skin = ai_bandit_skin call BIS_fnc_selectRandom; };
 		if(_skin == "special") 	then { _skin = ai_special_skin call BIS_fnc_selectRandom; };
-		if(typeName (_skin) == "ARRAY") then { _skin = _skin call BIS_fnc_selectRandom; };
+		_skin = _skin call PT_cnvARRY;
 		
 		//spawn
 		_cargo = _unitGroup createUnit [_skin, [0,0,0], [], 1, "NONE"];
@@ -83,6 +110,20 @@ PT_add_cargoUnits = {
 	_vehicle allowCrewInImmobile false;
 };
 
+PT_loadWP = {
+	private ["_vehicle","_loadWP","_unitGroup"];
+	_vehicle = _this select 0;
+	_unitGroup = _this select 1;
+	if (({(_x distance _vehicle) > 100} count (assignedCargo _vehicle)) > 0) then {
+		_loadWP = _unitGroup addWaypoint [getPos _vehicle,0];
+		_loadWP setWaypointType "LOAD";
+		_loadWPCond = "_vehicle = (group this) getVariable ['assignedVehicle',objNull]; ({_x == (vehicle _x)} count (assignedCargo _vehicle)) == 0";
+		_loadWP setWaypointStatements [_loadWPCond,(format ["_unitGroup = (group this); deleteWaypoint [_unitGroup,%1]; _unitGroup setCurrentWaypoint [_unitGroup,0];",(_loadWP select 1)])];
+		_loadWP setWaypointCompletionRadius 20;
+		_unitGroup setCurrentWaypoint _loadWP;
+	};
+};
+
 PT_roadpos = [];//road position
 {
 	private ["_pos","_text"];
@@ -109,17 +150,16 @@ PT_heli_patrol = {
 		};
 
 		// select class name if it's array
-		if(typeName (_class) == "ARRAY") then {
-			_class = _class call BIS_fnc_selectRandom;
-		};
+		_class = _class call PT_cnvARRY;
 		_this set [3, _class];
 		
 		// spawn heli
 		_unitGroup = _this call heli_patrol;
-		_vehicle = vehicle (leader _unitGroup); //get vehicle object
+		_vehicle = _unitGroup call PT_setVehicle; //get vehicle object
 		_vehname = getText (configFile >> "CfgVehicles" >> _class >> "displayName");
-		diag_log format["[Patrol] %1 %2",_vehname,_this];
-		_vehicle lock false;
+		if (PT_log) then {
+			diag_log format["[Patrol] %1 %2",_vehname,_this];
+		};
 		
 		//Add units
 		[_unitGroup,_vehicle,_skill,_skin,_this select 6] call PT_add_cargoUnits;
@@ -149,12 +189,18 @@ PT_heli_patrol = {
 				{_x action ["Eject", _vehicle];_x setDamage 1;} foreach (crew _vehicle);
 				_vehicle removeAllEventHandlers "HandleDamage";
 				_vehicle setDamage 2;
-				diag_log format["[Patrol] suicided %1", _vehicle];
+				if (PT_log) then {
+					diag_log format["[Patrol] suicided %1", _vehicle];
+				};
 			};
+			[_vehicle,_unitGroup] call PT_loadWP;
 		}; //while vehicle alive
 		
-		diag_log format["[Patrol] %1 finished its duty",_vehname];
+		if (PT_log) then {
+			diag_log format["[Patrol] %1 finished its duty",_vehname];
+		};
 		
+		deleteGroup _unitGroup;
 		deleteMarker _dot;
 		sleep PT_heli_patrol_wait; //wait...wait...
 	};
@@ -176,15 +222,11 @@ PT_vehicle_patrol = {
 		};
 
 		// select class name if it's array
-		if(typeName (_class) == "ARRAY") then {
-			_class = _class call BIS_fnc_selectRandom;
-		};
+		_class = _class call PT_cnvARRY;
 		_this set [4, _class];
 		
 		//select wp
-		if((typeName (_dest select 0)) == "ARRAY") then {
-			_dest = _dest call BIS_fnc_selectRandom;
-		};
+		_dest = _dest call PT_cnvARRY;
 		_this set [0, _dest];
 		if((typeName (_strt select 0)) == "ARRAY") then {
 			_test = _strt call BIS_fnc_selectRandom;
@@ -195,11 +237,11 @@ PT_vehicle_patrol = {
 		
 		// spawn vehicle
 		_unitGroup = _this call vehicle_patrol;
-		_vehicle = vehicle (leader _unitGroup); //get vehicle object
+		_vehicle = _unitGroup call PT_setVehicle; //get vehicle object
 		_vehname = getText (configFile >> "CfgVehicles" >> _class >> "displayName");
-		diag_log format["[Patrol] %1 %2",_vehname,_this];
-		_vehicle lock false;
-		_unitGroup setVariable ["assignedVehicle",_vehicle];
+		if (PT_log) then {
+			diag_log format["[Patrol] %1 %2",_vehname,_this];
+		};
 		
 		//Add units
 		[_unitGroup,_vehicle,_skill,_skin,_this select 7] call PT_add_cargoUnits;
@@ -223,18 +265,14 @@ PT_vehicle_patrol = {
 				_dot setMarkerSize [0.5,0.5];
 			};
 			sleep 5;
-			if (({(_x distance _vehicle) > 150} count (assignedCargo _vehicle)) > 0) then {
-				_loadWP = _unitGroup addWaypoint [getPos _vehicle,0];
-				_loadWP setWaypointType "LOAD";
-				_loadWPCond = "_vehicle = (group this) getVariable ['assignedVehicle',objNull]; ({_x == (vehicle _x)} count (assignedCargo _vehicle)) == 0";
-				_loadWP setWaypointStatements [_loadWPCond,(format ["_unitGroup = (group this); deleteWaypoint [_unitGroup,%1]; _unitGroup setCurrentWaypoint [_unitGroup,0];",(_loadWP select 1)])];
-				_loadWP setWaypointCompletionRadius 20;
-				_unitGroup setCurrentWaypoint _loadWP;
-			};
+			[_vehicle,_unitGroup] call PT_loadWP;
 		}; //while vehicle alive
 		
-		diag_log format["[Patrol] %1 finished its duty",_vehname];
+		if (PT_log) then {
+			diag_log format["[Patrol] %1 finished its duty",_vehname];
+		};
 		
+		deleteGroup _unitGroup;
 		deleteMarker _dot;
 		sleep PT_vehicle_patrol_wait; //wait...wait...
 	};
@@ -258,7 +296,9 @@ PT_spawn_group = {
 		
 		// spawn units
 		_unitGroup = _arry call spawn_group;
-		diag_log format["[Patrol] Spawning %1 %2",name (leader _unitGroup),_pos];
+		if (PT_log) then {
+			diag_log format["[Patrol] Spawning %1 %2",name (leader _unitGroup),_pos];
+		};
 		
 		//waypoint
 		if((count _pos) < 3) then {
@@ -280,8 +320,11 @@ PT_spawn_group = {
 			sleep 5;
 		}; //while vehicle alive
 		
-		diag_log format["[Patrol] Eliminated Infantry @ %1",_pos];
+		if (PT_log) then {
+			diag_log format["[Patrol] Eliminated Infantry @ %1",_pos];
+		};
 		
+		deleteGroup _unitGroup;
 		deleteMarker _dot;
 		sleep PT_spawn_group_wait; //wait...wait...
 		
@@ -291,6 +334,8 @@ PT_spawn_group = {
 		};
 	};
 };
+
+PTconfigloaded = true;
 
 /* run */
 call compile preProcessFileLineNumbers "\z\addons\dayz_server\addons\patrol\mission.sqf";

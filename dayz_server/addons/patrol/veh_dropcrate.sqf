@@ -50,7 +50,9 @@ for "_i" from 0 to _num do {
 	_box addMagazineCargoGlobal [_item,1];
 };
 
-diag_log format ["[Patrol] AI patrol %1 spawned a crate @%2", typeOf _veh, getpos _box];
+if (PT_log) then {
+	diag_log format ["[Patrol] AI patrol %1 spawned a crate @%2", typeOf _veh, getpos _box];
+};
 
 sleep 5;
 _box allowDammage true;

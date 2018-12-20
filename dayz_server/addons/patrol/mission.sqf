@@ -57,7 +57,7 @@ _vehicleList = [ // list of heli patrol, [classname,chance in integer]
 // Town Bandits
 _cityAI	 = true; // bandits on big cities
 _villageAI	 = true; // bandits on village and hills
-_villageAI_chance = 0.05; // spawn chance
+_villageAI_chance = 0.01; // spawn chance
 
 /* run */
 
