@@ -244,7 +244,9 @@ PT_vehicle_patrol = {
 		_this set [4, _class];
 		
 		//select wp
-		_dest = _dest call PT_cnvARRY;
+		if((typeName (_dest select 0)) == "ARRAY") then {
+			_dest = _dest call BIS_fnc_selectRandom;
+		};
 		_this set [0, _dest];
 		if((typeName (_strt select 0)) == "ARRAY") then {
 			_test = _strt call BIS_fnc_selectRandom;
