@@ -28,6 +28,7 @@ PT_log = false;					 // debug log
 PT_Marker = false;				 // marker on/off
 PT_wait_players = 1;			 // least number of players for AIs to respawn
 PT_crate_despawn_time = 1200;	 // time until deleting reward crate
+PT_despawn_time = 15*60;		 // time until vehicle units despawn
 
 //patrol heli
 PT_heli_patrol_wait = 600;		 // interval between being shot down and respawning heli

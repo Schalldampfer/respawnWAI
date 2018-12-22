@@ -137,6 +137,24 @@ PT_roadpos = [];//road position
 	};
 } foreach (nearestLocations [getMarkerPos "center", ["NameCityCapital","NameCity","NameVillage"],(getMarkerSize "center") select 1]);
 
+PT_despawn_group = {
+	//_unitGroup = _this;
+	
+	sleep PT_despawn_time;
+	
+	{
+		if (alive _x) then {
+			_x setDamage 1;
+		};
+	} foreach (units _this);
+	
+	if (PT_log) then {
+		diag_log format["[Patrol] %1 units despawned",_this];
+	};
+	
+	deleteGroup _this;
+};
+
 PT_heli_patrol = {
 	private ["_class","_skill","_skin","_unitGroup","_vehicle","_dot","_time","_vehname"];
 	_class		 = _this select 3;
@@ -200,7 +218,7 @@ PT_heli_patrol = {
 			diag_log format["[Patrol] %1 finished its duty",_vehname];
 		};
 		
-		deleteGroup _unitGroup;
+		_unitGroup spawn PT_despawn_group;
 		deleteMarker _dot;
 		sleep PT_heli_patrol_wait; //wait...wait...
 	};
@@ -272,7 +290,7 @@ PT_vehicle_patrol = {
 			diag_log format["[Patrol] %1 finished its duty",_vehname];
 		};
 		
-		deleteGroup _unitGroup;
+		_unitGroup spawn PT_despawn_group;
 		deleteMarker _dot;
 		sleep PT_vehicle_patrol_wait; //wait...wait...
 	};
