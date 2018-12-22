@@ -123,7 +123,7 @@ if (_cityAI) then {
 		if ({_pos distance (_x select 0) < ((_x select 1) * 10)} foreach DZE_SafeZonePosArray) exitWith {};
 		
 		//spawn
-		[_pos,ceil(random 4) + 2,"Medium",[0,["AT","AA"] call BIS_fnc_selectRandom],5,"Random","Bandit","Random",_BH_ratio call BIS_fnc_selectRandom] spawn PT_spawn_group;
+		[_pos,ceil(random 4) + 2,"Medium",0,5,"Random","Bandit","Random",_BH_ratio call BIS_fnc_selectRandom] spawn PT_spawn_group;
 		diag_log format["[Patrol] Town Infantry @ %1 %2",_text,_pos];
 	};
 } foreach (nearestLocations [getMarkerPos "center", ["NameCityCapital","NameCity"],(getMarkerSize "center") select 1]);
