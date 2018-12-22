@@ -137,6 +137,18 @@ PT_roadpos = [];//road position
 	};
 } foreach (nearestLocations [getMarkerPos "center", ["NameCityCapital","NameCity","NameVillage"],(getMarkerSize "center") select 1]);
 
+PT_kill_ai = {
+	if (vehicle _this != _this) then {
+		_this action ["eject", vehicle _this];
+	};
+	_this playmove (["ActsPercMstpSnonWpstDnon_suicide1B","ActsPercMstpSnonWpstDnon_suicide2B"] call BIS_fnc_selectRandom);
+	sleep 8;
+	_this fire currentWeapon _this;
+	_this setDamage 1;
+	sleep 60;
+	deleteVehicle _this;
+};
+
 PT_despawn_group = {
 	//_unitGroup = _this;
 	
@@ -144,7 +156,7 @@ PT_despawn_group = {
 	
 	{
 		if (alive _x) then {
-			_x setDamage 1;
+			_x spawn PT_kill_ai;
 		};
 	} foreach (units _this);
 	
