@@ -33,10 +33,11 @@ PT_despawn_time = 15*60;		 // time until vehicle units despawn
 //patrol heli
 PT_heli_patrol_wait = 600;		 // interval between being shot down and respawning heli
 PT_heli_partol_time = 30*60;	 // patrol interval, they will sucide after this period
+PT_heli_cargo_ratio = 0.4;		 // How many bandits get in vehicle as cargo
 
 //patrol vehicle
 PT_vehicle_patrol_wait = 450;	 // interval between being killed and respawning heli
-PT_cargo_ratio = 0.6;			 // How many bandits get in vehicle as cargo
+PT_vehicle_cargo_ratio = 0.6;	 // How many bandits get in vehicle as cargo
 
 // infantry
 PT_spawn_group_wait = 1200;		 // interval between eliminated and respawn infantry

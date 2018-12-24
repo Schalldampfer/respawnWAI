@@ -47,8 +47,9 @@ PT_add_cargoUnits = {
 	_skill = _this select 2;
 	_skin = _this select 3;
 	_aitype = _this select 4;
+	_ratio = _this select 5;
 	
-	_cargoSpots = ceil((_vehicle emptyPositions "cargo") * PT_cargo_ratio);
+	_cargoSpots = ceil((_vehicle emptyPositions "cargo") * _ratio);
 	for "_i" from 0 to (_cargoSpots - 1) do {
 		//select skin
 		if(_skin == "random") 	then { _skin = ai_all_skin call BIS_fnc_selectRandom; };
@@ -94,6 +95,18 @@ PT_add_cargoUnits = {
 		{
 			(unitBackpack _cargo) addMagazineCargoGlobal [_x, 1];
 		} count ((ai_gear_random call BIS_fnc_selectRandom) select 0);
+
+		call {
+			private ["_item"];
+			_item = (crate_items_random call BIS_fnc_selectRandom) call BIS_fnc_selectRandom;
+
+			if(typeName (_item) == "ARRAY") then {
+				(unitBackpack _cargo) addMagazineCargoGlobal [_item select 0,_item select 1];
+			} else {
+				(unitBackpack _cargo) addMagazineCargoGlobal [_item,1];
+			};
+		};
+
 		
 		//humanity
 		call {
@@ -110,6 +123,22 @@ PT_add_cargoUnits = {
 	_vehicle allowCrewInImmobile false;
 };
 
+PT_setNextWP = {
+	private ["_unitGroup","_dest","_wp"];
+	_unitGroup = _this;
+	_dest = _unitGroup getVariable ["Destination", [getPos (leader _unitGroup), 50]];
+	_dest set [2,0];
+	for "_x" from 1 to 4 do
+	{
+		_wp = _unitGroup addWaypoint [(_dest select 0),(_dest select 1)];
+		_wp setWaypointType "SAD";
+		_wp setWaypointCompletionRadius 200;
+	};
+	_wp = _unitGroup addWaypoint [(_dest select 0),(_dest select 1)];
+	_wp setWaypointType "CYCLE";
+	_wp setWaypointCompletionRadius 200;
+};
+
 PT_loadWP = {
 	private ["_vehicle","_loadWP","_unitGroup"];
 	_vehicle = _this select 0;
@@ -118,7 +147,7 @@ PT_loadWP = {
 		_loadWP = _unitGroup addWaypoint [getPos _vehicle,0];
 		_loadWP setWaypointType "LOAD";
 		_loadWPCond = "_vehicle = (group this) getVariable ['assignedVehicle',objNull]; ({_x == (vehicle _x)} count (assignedCargo _vehicle)) == 0";
-		_loadWP setWaypointStatements [_loadWPCond,(format ["_unitGroup = (group this); deleteWaypoint [_unitGroup,%1]; _unitGroup setCurrentWaypoint [_unitGroup,0];",(_loadWP select 1)])];
+		_loadWP setWaypointStatements [_loadWPCond,(format ["_unitGroup = (group this); deleteWaypoint [_unitGroup,%1]; _unitGroup call PT_setNextWP; _unitGroup setCurrentWaypoint [_unitGroup,0];",(_loadWP select 1)])];
 		_loadWP setWaypointCompletionRadius 20;
 		_unitGroup setCurrentWaypoint _loadWP;
 	};
@@ -187,12 +216,13 @@ PT_heli_patrol = {
 		_unitGroup = _this call heli_patrol;
 		_vehicle = _unitGroup call PT_setVehicle; //get vehicle object
 		_vehname = getText (configFile >> "CfgVehicles" >> _class >> "displayName");
+		_unitGroup setVariable ["Destination", [_this select 0,_this select 1], false];
 		if (PT_log) then {
 			diag_log format["[Patrol] %1 %2",_vehname,_this];
 		};
 		
 		//Add units
-		[_unitGroup,_vehicle,_skill,_skin,_this select 6] call PT_add_cargoUnits;
+		[_unitGroup,_vehicle,_skill,_skin,_this select 6,PT_heli_cargo_ratio] call PT_add_cargoUnits;
 		_unitGroup allowFleeing 0;
 		
 		//EHs - spawn crate and eject crew
@@ -271,12 +301,13 @@ PT_vehicle_patrol = {
 		_unitGroup = _this call vehicle_patrol;
 		_vehicle = _unitGroup call PT_setVehicle; //get vehicle object
 		_vehname = getText (configFile >> "CfgVehicles" >> _class >> "displayName");
+		_unitGroup setVariable ["Destination", [_dest,_rad], false];
 		if (PT_log) then {
 			diag_log format["[Patrol] %1 %2",_vehname,_this];
 		};
 		
 		//Add units
-		[_unitGroup,_vehicle,_skill,_skin,_this select 7] call PT_add_cargoUnits;
+		[_unitGroup,_vehicle,_skill,_skin,_this select 7,PT_vehicle_cargo_ratio] call PT_add_cargoUnits;
 		_unitGroup allowFleeing 0;
 		
 		//EHs - spawn crate and eject crew
