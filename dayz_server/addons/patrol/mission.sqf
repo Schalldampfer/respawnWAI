@@ -18,13 +18,14 @@ _heliList = [ // list of heli patrol, [classname,chance in integer]
 	["UH60M_EP1_DZ",1],
 	["Mi17_UN_CDF_EP1_DZE",1],
 	["Mi17_Civilian_DZ",1],
-	["AH6J_EP1_DZ",1],
+	["CH_47F_EP1_DZ",1],
+	["AH6J_EP1",1],
+	["pook_H13_gunship_GUE",1],
+	["pook_H13_transport_GUE",1],
 	["CSJ_GyroP",1],
 	["Ka137_PMC",1],
 	["Ka137_MG_PMC",1],
 	["GNT_C185T",1],
-	["CYBP_Camel_us",1],
-	["CYBP_Camel_rus",1],
 	["Pchela1T_CDF",1],
 	["Pchela1T",1]
 ];
