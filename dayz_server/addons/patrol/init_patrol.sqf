@@ -18,6 +18,7 @@ call compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\conf
 /* functions */
 PT_veh_dropcrate = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\veh_dropcrate.sqf";
 PT_heli_damage = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\heli_damage.sqf";
+PT_vehicle_damage = compile preprocessFileLineNumbers "\z\addons\dayz_server\addons\patrol\vehicle_damage.sqf";
 
 PT_setVehicle = {
 	private ["_unitGroup","_vehicle"];
@@ -312,6 +313,7 @@ PT_vehicle_patrol = {
 		
 		//EHs - spawn crate and eject crew
 		_vehicle removeAllEventHandlers "GetOut";
+		_vehicle addEventHandler ["HandleDamage",{_this call PT_vehicle_damage}];
 		if (PT_crate) then {
 			_vehicle addEventHandler ["Killed",{_this spawn PT_veh_dropcrate}];
 		};
